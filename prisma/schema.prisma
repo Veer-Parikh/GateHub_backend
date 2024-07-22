@@ -22,8 +22,8 @@ model Otp {
 
 model User {
   userId     String   @id @default(uuid())
-  email      String
-  number     String
+  email      String @unique
+  number     String @unique
   password   String
   profileUrl String?
   createdAt  DateTime @default(now())
