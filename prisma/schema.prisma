@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Otp {
+  otpId String @id @default(uuid())
+  number String
+  otpHash String
+}
+
+model User {
+  userId     String   @id @default(uuid())
+  email      String
+  number     String
+  password   String
+  profileUrl String?
+  createdAt  DateTime @default(now())
+  name       String   @unique
+}
+
+model Admin {
+  adminId    String     @id @default(uuid())
+  email      String
+  number     String
+  password   String
+  profileUrl String?
+  createdAt  DateTime   @default(now())
+  name       String     @unique
+  Meetings   Meetings[]
+}
+
+model Security {
+  securityId String   @id @default(uuid())
+  name       String
+  email      String?
+  number     String
+  password   String
+  profileUrl String?
+  createdAt  DateTime @default(now())
+}
+
+model Visitor {
+  visitorId String   @id @default(uuid())
+  name      String
+  age       Int
+  address   String
+  purpose   String
+  number    Int
+  photo     String
+  createdAt DateTime @default(now())
+}
+
+model Meetings {
+  meetingId    String   @id @default(uuid())
+  admin        Admin    @relation(fields: [adminAdminId], references: [adminId])
+  title        String
+  agenda       String?
+  date         DateTime
+  time         DateTime
+  location     String
+  completed    Boolean  @default(false)
+  adminAdminId String
+  createdAt    DateTime @default(now())
+}
