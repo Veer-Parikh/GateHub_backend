@@ -3,7 +3,8 @@ const prisma = require('../../utils/prisma');
 const cloudinary = require('cloudinary').v2;
 const jwt = require('jsonwebtoken');
 const logger = require('../../utils/logger');
-const {sendOtp,requestOtp,verifyOtp} = require("../../middleware/twilio")
+const {sendOtp,requestOtp,verifyOtp, generateOTP, getOtpExpiration, sendOTP} = require("../../middleware/auth");
+const { generateToken } = require('../../utils/jwt');
 
 async function createUser(req, res) {
     try {
@@ -14,91 +15,110 @@ async function createUser(req, res) {
             profileUrl = (await result).secure_url;
         }
 
-        const { name, email, number, password } = req.body;
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const { name, email, number, isAdmin } = req.body;
+        // const hashedPassword = await bcrypt.hash(password, 10);
+
+        const otp = generateOTP();
+        const otpExpiration = getOtpExpiration();
+       
+        const existingUser = await prisma.user.findUnique({ where: { email } });
+        if (existingUser) {
+          return res.status(400).json({ message: 'User already exists' });
+        }
 
         const user = await prisma.user.create({
-            data: {
-                name,
-                email,
-                password: hashedPassword,
-                profileUrl,
-                number,
-            },
+            data: { name, email, number, otp, otpExpiration, isAdmin },
         });
-        logger.info("User saved successfully");
-        res.send(user);
+
+        await sendOTP(number, otp);
+        logger.info("otp sent")
+        // res.send(user);
+        res.json({ message: 'OTP sent successfully' });
     } catch (error) {
         logger.error("Error creating user");
         res.send(error.message);
     }
 }
 
-async function login(req, res) {
-    try {
-        const { email, password } = req.body;
-        const user = await prisma.user.findUnique({
-            where: { email },
-        });
+async function loginUser(req,res){
+    try{
+        const { number } = req.body;
 
-        if (!user || !(await bcrypt.compare(password, user.password))) {
-            return res.status(401).send('Invalid credentials');
-        }
+        const otp = generateOTP();
+        const otpExpiration = getOtpExpiration();
 
-        const token = jwt.sign({ userId: user.userId }, process.env.JWT_SECRET, {
-            expiresIn: '1h',
-        });
-
-        res.send({ token, userId: user.userId });
-    } catch (error) {
-        logger.error("Error logging in");
-        res.send(error.message);
-    }
-}
-
-async function requestOtpForLogin(req, res) {
-    try {
-        await requestOtp(req, res);
-    } catch (error) {
-        logger.error("Error requesting OTP");
-        res.send(error.message);
-    }
-}
-
-async function verifyLogin(req, res) {
-    try {
-        const { phoneNumber, otp } = req.body;
-        const isValid = await verifyOtp(phoneNumber, otp);
-
-        if (!isValid) {
-            return res.status(401).send('Invalid OTP');
-        }
-
-        const user = await prisma.user.findUnique({
-            where: { number: phoneNumber },
-        });
-
+        const user = await prisma.user.findFirst({ where: { number } });
         if (!user) {
-            return res.status(401).send('User not found');
+          return res.json({ message: 'User not found' });
         }
 
-        const token = jwt.sign({ userId: user.userId }, process.env.JWT_SECRET, {
-            expiresIn: '1h',
+        await prisma.user.update({
+            where: { number },
+            data: { otp, otpExpiration },
         });
 
-        res.send({ token, userId: user.userId });
+        await sendOTP(number, otp);
+        res.json({ message: 'OTP sent successfully' });
+        logger.info("otp sent")
     } catch (error) {
-        logger.error("Error verifying OTP");
-        res.send(error.message);
+        res.send(error);
+        logger.error(error)
+    }
+} 
+
+// async function login(req, res) {
+//     try {
+//         const { email, password } = req.body;
+//         const user = await prisma.user.findUnique({
+//             where: { email },
+//         });
+
+//         if (!user || !(await bcrypt.compare(password, user.password))) {
+//             return res.status(401).send('Invalid credentials');
+//         }
+
+//         const token = jwt.sign({ userId: user.userId }, process.env.JWT_SECRET, {
+//             expiresIn: '1h',
+//         });
+
+//         res.send({ token, userId: user.userId });
+//     } catch (error) {
+//         logger.error("Error logging in");
+//         res.send(error.message);
+//     }
+// }
+
+async function verify(req,res){
+    const { number, otp } = req.body;
+
+    try {
+      const user = await prisma.user.findUnique({ where: { number } });
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+  
+      if (user.otp !== otp || new Date() > user.otpExpiration) {
+        return res.status(400).json({ message: 'Invalid or expired OTP' });
+      }
+  
+      await prisma.user.update({
+        where: { number },
+        data: { otp: null, otpExpiration: null },
+      });
+  
+      const token = generateToken(user);
+      res.status(200).json({ message: 'OTP verified successfully', token });
+    } catch (error) {
+        logger.error(error)
+      res.status(500).json({ error: 'Failed to verify OTP' });
     }
 }
-
 
 async function myProfile(req,res){
     try{
         const user = await prisma.user.findFirst({
             where:{
-                userId:req.user.userId
+                userId:req.id
             }
         });
         logger.info("user profile found successfully");
@@ -147,4 +167,4 @@ async function deleteUser(req, res) {
     }
 }
 
-module.exports = { deleteUser,allUsers,createUser,myProfile,requestOtpForLogin,login,verifyLogin }
+module.exports = { deleteUser,allUsers,createUser,myProfile,verify,loginUser }
