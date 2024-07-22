@@ -14,31 +14,17 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model Otp {
-  otpId String @id @default(uuid())
-  number String
-  otpHash String
-}
-
 model User {
-  userId     String   @id @default(uuid())
-  email      String @unique
-  number     String @unique
-  password   String
-  profileUrl String?
-  createdAt  DateTime @default(now())
-  name       String   @unique
-}
-
-model Admin {
-  adminId    String     @id @default(uuid())
-  email      String
-  number     String
-  password   String
-  profileUrl String?
-  createdAt  DateTime   @default(now())
-  name       String     @unique
-  Meetings   Meetings[]
+  userId        String     @id @default(uuid())
+  email         String     @unique
+  number        String     @unique
+  profileUrl    String?
+  otp           String?
+  otpExpiration DateTime?
+  createdAt     DateTime   @default(now())
+  name          String     @unique
+  isAdmin       Boolean    @default(false)
+  Meetings      Meetings[]
 }
 
 model Security {
@@ -63,14 +49,14 @@ model Visitor {
 }
 
 model Meetings {
-  meetingId    String   @id @default(uuid())
-  admin        Admin    @relation(fields: [adminAdminId], references: [adminId])
-  title        String
-  agenda       String?
-  date         DateTime
-  time         DateTime
-  location     String
-  completed    Boolean  @default(false)
-  adminAdminId String
-  createdAt    DateTime @default(now())
+  meetingId  String   @id @default(uuid())
+  title      String
+  agenda     String?
+  date       DateTime
+  time       DateTime
+  location   String
+  completed  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  admin      User     @relation(fields: [userUserId], references: [userId])
+  userUserId String
 }
