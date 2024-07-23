@@ -3,7 +3,7 @@ const prisma = require('../../utils/prisma');
 const cloudinary = require('cloudinary').v2;
 const jwt = require('jsonwebtoken');
 const logger = require('../../utils/logger');
-const {sendOtp,requestOtp,verifyOtp, generateOTP, getOtpExpiration, sendOTP} = require("../../middleware/auth");
+const { generateOTP, getOtpExpiration, sendOTP} = require("../../middleware/auth");
 const { generateToken } = require('../../utils/jwt');
 
 async function createUser(req, res) {

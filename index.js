@@ -9,7 +9,7 @@ dotenv.config();
 
 const prisma = new PrismaClient();
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
 
 app.use(
     cors({
@@ -26,3 +26,6 @@ app.listen(port, () => {
 
 const userRoutes = require('./modules/user/userRoutes')
 app.use('/api/user',userRoutes)
+
+const meetingRoutes = require('./modules/meeting/meetingRoute')
+app.use('/api/meeting',meetingRoutes)
