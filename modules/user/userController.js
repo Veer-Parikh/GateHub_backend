@@ -36,7 +36,7 @@ async function createUser(req, res) {
         res.json({ message: 'OTP sent successfully' });
     } catch (error) {
         logger.error("Error creating user");
-        res.send(error.message);
+        res.send(error);
     }
 }
 

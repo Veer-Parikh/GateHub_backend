@@ -8,6 +8,7 @@ const logger = require('../utils/logger');
 const axios = require('axios')
 
 const prisma = new PrismaClient();
+const apiKey = process.env.FAST2SMS_API_KEY
 
 const sendOTP = async (phoneNumber, otp) => {
     const message = `Your OTP is: ${otp}`;
@@ -22,7 +23,7 @@ const sendOTP = async (phoneNumber, otp) => {
     try {
       const response = await axios.post(`https://www.fast2sms.com/dev/bulkV2`, data, {
         headers: {
-          'authorization': process.env.FAST2SMS_API_KEY,
+          'Authorization': apiKey,
           'Content-Type': 'application/json',
         },
       });
