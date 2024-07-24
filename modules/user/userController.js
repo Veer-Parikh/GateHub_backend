@@ -56,7 +56,7 @@ async function loginUser(req,res){
             where: { number },
             data: { otp, otpExpiration },
         });
-
+        
         await sendOTP(number, otp);
         res.json({ message: 'OTP sent successfully' });
         logger.info("otp sent")
@@ -107,7 +107,7 @@ async function verify(req,res){
       });
   
       const token = generateToken(user);
-      res.status(200).json({ message: 'OTP verified successfully', token });
+      res.status(200).json({ message: 'OTP verified successfully', token , user });
     } catch (error) {
         logger.error(error)
       res.status(500).json({ error: 'Failed to verify OTP' });
