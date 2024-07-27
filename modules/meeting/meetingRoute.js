@@ -13,6 +13,6 @@ router.put("/incomplete/:meetingId",incompleteMeeting);
 router.get("/completed",getCompleteMeeting);
 router.get("/incompleted",getIncompleteMeeting);
 router.put("/update/:meetingId",authorizeAdmin,updateMeeting);
-router.delete("/delete",deleteMeeting);
+router.delete("/delete/:id",deleteMeeting);
 
 module.exports = router;

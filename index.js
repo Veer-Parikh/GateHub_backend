@@ -29,3 +29,6 @@ app.use('/api/user',userRoutes)
 
 const meetingRoutes = require('./modules/meeting/meetingRoute')
 app.use('/api/meeting',meetingRoutes)
+
+const securityRoutes = require('./modules/security/securityRoute')
+app.use('/api/security',securityRoutes)

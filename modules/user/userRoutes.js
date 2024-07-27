@@ -10,6 +10,6 @@ router.post('/login', loginUser);
 router.post('/verify-otp', verify);
 router.get('/my', myProfile);
 router.get('/all', allUsers);
-router.delete('/delete', deleteUser);
+router.delete('/delete/:id', deleteUser);
 
 module.exports = router

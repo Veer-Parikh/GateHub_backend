@@ -159,14 +159,14 @@ async function deleteMeeting(req, res) {
     try {
         const meeting = await prisma.meetings.delete({
             where: {
-                meetingId:req.body.meetingId
+                meetingId:req.params.id
             }
         });
         if (!meeting) {
             logger.error("meeting doesn't exist");
             return res.send("meeting does not exist");
         }
-        if (user) {
+        if (meeting) {
             logger.info("meeting deleted successfully");
             return res.send("meeting deleted successfully");
         }

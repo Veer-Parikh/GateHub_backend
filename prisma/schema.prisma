@@ -5,7 +5,7 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["fullTextSearch"]
 }
 
@@ -26,15 +26,14 @@ model User {
   name          String     @unique
   isAdmin       Boolean    @default(false)
   Meetings      Meetings[]
+  Visitor       Visitor[]
 }
 
 model Security {
   securityId String   @id @default(uuid())
   name       String
-  email      String?
-  number     String
+  number     String   @unique
   password   String
-  profileUrl String?
   createdAt  DateTime @default(now())
 }
 
@@ -46,7 +45,9 @@ model Visitor {
   purpose   String
   number    Int
   photo     String
+  user      User     @relation(fields: [userId], references: [userId])
   createdAt DateTime @default(now())
+  userId    String
 }
 
 model Meetings {
