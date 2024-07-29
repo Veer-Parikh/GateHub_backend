@@ -148,11 +148,22 @@ cloudinary.config({
 
 async function deleteUser(req, res) {
     try {
-        const user = await prisma.user.delete({
+        const userId = req.params.id;
+
+        // Delete the meetings created by the user first
+        const deleteMeetings = await prisma.meetings.deleteMany({
             where: {
-                userId:req.params.id
+                userId: userId
             }
         });
+
+        // Delete the user
+        const user = await prisma.user.delete({
+            where: {
+                userId: userId
+            }
+        });
+
         if (!user) {
             logger.error("User doesn't exist");
             return res.send("User does not exist");

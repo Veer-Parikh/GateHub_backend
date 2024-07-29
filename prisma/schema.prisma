@@ -30,24 +30,27 @@ model User {
 }
 
 model Security {
-  securityId String   @id @default(uuid())
+  securityId String    @id @default(uuid())
   name       String
-  number     String   @unique
+  number     String    @unique
   password   String
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
+  Visitor    Visitor[]
 }
 
 model Visitor {
-  visitorId String   @id @default(uuid())
-  name      String
-  age       Int
-  address   String
-  purpose   String
-  number    Int
-  photo     String
-  user      User     @relation(fields: [userId], references: [userId])
-  createdAt DateTime @default(now())
-  userId    String
+  visitorId  String    @id @default(uuid())
+  name       String
+  age        Int
+  address    String
+  purpose    String
+  number     Int
+  photo      String
+  user       User?     @relation(fields: [userId], references: [userId])
+  createdAt  DateTime  @default(now())
+  userId     String?
+  security   Security? @relation(fields: [securityId], references: [securityId])
+  securityId String?
 }
 
 model Meetings {
