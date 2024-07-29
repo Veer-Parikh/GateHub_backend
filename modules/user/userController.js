@@ -118,7 +118,7 @@ async function myProfile(req,res){
     try{
         const user = await prisma.user.findFirst({
             where:{
-                userId:req.id
+                userId:req.params.id
             }
         });
         logger.info("user profile found successfully");
