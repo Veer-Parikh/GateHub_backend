@@ -45,4 +45,24 @@ async function login(req, res) {
     }
 }
 
-module.exports = { createSecurity,login }
+async function delSecurity (req,res) {
+    try {
+        const deleteVisitors = await prisma.visitor.deleteMany({
+            where: {
+                securityId: req.body.securityId
+            }
+        });
+        const security = await prisma.security.delete({
+            where:{
+                securityId:req.body.securityId
+            }
+        });
+        res.send("security deleted successfully")
+        logger.info("security deleted successfully")
+    } catch (error) {
+        res.send(error);
+        logger.error(error);
+    }
+}
+
+module.exports = { createSecurity,login,delSecurity }

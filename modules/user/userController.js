@@ -150,14 +150,16 @@ async function deleteUser(req, res) {
     try {
         const userId = req.params.id;
 
-        // Delete the meetings created by the user first
+        const deleteVisitors = await prisma.visitor.deleteMany({
+            where: {
+                userId: userId
+            }
+        });
         const deleteMeetings = await prisma.meetings.deleteMany({
             where: {
                 userId: userId
             }
         });
-
-        // Delete the user
         const user = await prisma.user.delete({
             where: {
                 userId: userId
