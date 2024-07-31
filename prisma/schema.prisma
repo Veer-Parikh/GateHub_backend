@@ -45,12 +45,13 @@ model Visitor {
   address    String
   purpose    String
   number     Int
-  photo      String
+  photo      String?
   user       User?     @relation(fields: [userId], references: [userId])
   createdAt  DateTime  @default(now())
   userId     String?
   security   Security? @relation(fields: [securityId], references: [securityId])
   securityId String?
+  status     Boolean //in or out
 }
 
 model Meetings {

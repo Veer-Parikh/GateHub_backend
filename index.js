@@ -32,3 +32,6 @@ app.use('/api/meeting',meetingRoutes)
 
 const securityRoutes = require('./modules/security/securityRoute')
 app.use('/api/security',securityRoutes)
+
+const visitorRoutes = require('./modules/visitor/visitorRoute')
+app.use('/api/visitor',visitorRoutes)
