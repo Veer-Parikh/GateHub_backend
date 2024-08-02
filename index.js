@@ -35,3 +35,6 @@ app.use('/api/security',securityRoutes)
 
 const visitorRoutes = require('./modules/visitor/visitorRoute')
 app.use('/api/visitor',visitorRoutes)
+
+const eventRoutes = require('./modules/events/eventRoute')
+app.use('/api/event',eventRoutes)

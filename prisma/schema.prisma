@@ -27,6 +27,7 @@ model User {
   isAdmin       Boolean    @default(false)
   Meetings      Meetings[]
   Visitor       Visitor[]
+  Events        Events[]
 }
 
 model Security {
@@ -63,5 +64,16 @@ model Meetings {
   completed Boolean  @default(false)
   createdAt DateTime @default(now())
   admin     User     @relation(fields: [userId], references: [userId])
+  userId    String
+}
+
+model Events {
+  eventId   String   @id @default(uuid())
+  title     String
+  details   String?
+  date      DateTime
+  venue     String
+  admin     User     @relation(fields: [userId], references: [userId])
+  createdAt DateTime @default(now())
   userId    String
 }
