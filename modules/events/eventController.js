@@ -38,7 +38,11 @@ async function deleteEvent(req,res){
 
 async function getEvents(req,res) {
     try {
-        const events = await prisma.events.findMany()
+        const events = await prisma.events.findMany({
+            include:{
+                admin:true
+            }
+        })
         res.send(events)
     } catch(error){
         logger.error(error);

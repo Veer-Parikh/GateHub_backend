@@ -16,18 +16,19 @@ datasource db {
 }
 
 model User {
-  userId        String     @id @default(uuid())
-  email         String     @unique
-  number        String     @unique
+  userId        String        @id @default(uuid())
+  email         String        @unique
+  number        String        @unique
   profileUrl    String?
   otp           String?
   otpExpiration DateTime?
-  createdAt     DateTime   @default(now())
-  name          String     @unique
-  isAdmin       Boolean    @default(false)
+  createdAt     DateTime      @default(now())
+  name          String        @unique
+  isAdmin       Boolean       @default(false)
   Meetings      Meetings[]
   Visitor       Visitor[]
   Events        Events[]
+  Maintenance   Maintenance[]
 }
 
 model Security {
@@ -76,4 +77,14 @@ model Events {
   admin     User     @relation(fields: [userId], references: [userId])
   createdAt DateTime @default(now())
   userId    String
+}
+
+model Maintenance {
+  maintenanceId String  @id @default(uuid())
+  amount        Int
+  paid          Boolean @default(false)
+  month         String
+  year          String
+  user          User    @relation(fields: [userId], references: [userId])
+  userId        String
 }
