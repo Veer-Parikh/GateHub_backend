@@ -3,8 +3,8 @@ const { PrismaClient } = require('@prisma/client');
 const dotenv = require('dotenv');
 const cors = require('cors')
 const bodyParser = require('body-parser')
-const prisma = require('../../utils/prisma');
-const logger = require('../../utils/logger');
+const prismaa = require('./utils/prisma')
+const logger = require('./utils/logger');
 const cron = require('node-cron');
 
 dotenv.config();
@@ -41,16 +41,16 @@ app.use('/api/visitor',visitorRoutes)
 const eventRoutes = require('./modules/events/eventRoute')
 app.use('/api/event',eventRoutes)
 
-cron.schedule('30 18 3 * *', async () => {
+cron.schedule('42 18 3 * *', async () => {
     try {
-        const users = await prisma.user.findMany();
+        const users = await prismaa.user.findMany();
 
         const maintenancePromises = users.map(user => {
-            return prisma.maintenance.create({
+            return prismaa.maintenance.create({
                 data: {
                     amount: 100.00,  // Set the amount for the maintenance bill
                     month: new Date().toLocaleString('default', { month: 'long' }),
-                    year: new Date().getFullYear(),
+                    year: new Date().getFullYear().toString(),
                     paid: false,
                     userId: user.userId
                 }
@@ -60,6 +60,6 @@ cron.schedule('30 18 3 * *', async () => {
         await Promise.all(maintenancePromises);
         logger.info('Maintenance bills created for all users');
     } catch (error) {
-        logger.error('Failed to create maintenance bills:', error);
+        logger.error(error);
     }
 });
