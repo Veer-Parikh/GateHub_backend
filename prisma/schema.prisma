@@ -29,6 +29,8 @@ model User {
   Visitor       Visitor[]
   Events        Events[]
   Maintenance   Maintenance[]
+  Rating        Rating[]
+  Booking       Booking[]
 }
 
 model Security {
@@ -87,4 +89,35 @@ model Maintenance {
   year          String
   user          User    @relation(fields: [userId], references: [userId])
   userId        String
+}
+
+model Plumber {
+  plumberId    String    @id @default(uuid())
+  name         String
+  generalCost  Float
+  serviceHours String
+  Rating       Rating[]
+  Booking      Booking[]
+}
+
+model Rating {
+  ratingId         String   @id @default(uuid())
+  rating           Int // Rating from 1 to 5
+  comment          String?
+  createdAt        DateTime @default(now())
+  plumber          Plumber  @relation(fields: [plumberPlumberId], references: [plumberId])
+  user             User     @relation(fields: [userUserId], references: [userId])
+  plumberPlumberId String
+  userUserId       String
+}
+
+model Booking {
+  bookingId        String   @id @default(uuid())
+  date             DateTime
+  description      String
+  user             User     @relation(fields: [userUserId], references: [userId])
+  plumber          Plumber  @relation(fields: [plumberPlumberId], references: [plumberId])
+  createdAt        DateTime @default(now())
+  userUserId       String
+  plumberPlumberId String
 }

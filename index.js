@@ -41,25 +41,46 @@ app.use('/api/visitor',visitorRoutes)
 const eventRoutes = require('./modules/events/eventRoute')
 app.use('/api/event',eventRoutes)
 
-cron.schedule('42 18 3 * *', async () => {
-    try {
-        const users = await prismaa.user.findMany();
+// cron.schedule('19 20 3 * *', async () => {
+//     try {
+//         const users = await prisma.user.findMany();
+//         const currentMonth = new Date().toLocaleString('default', { month: 'long' });
+//         const currentYear = new Date().getFullYear();
 
-        const maintenancePromises = users.map(user => {
-            return prismaa.maintenance.create({
-                data: {
-                    amount: 100.00,  // Set the amount for the maintenance bill
-                    month: new Date().toLocaleString('default', { month: 'long' }),
-                    year: new Date().getFullYear().toString(),
-                    paid: false,
-                    userId: user.userId
-                }
-            });
-        });
+//         const maintenancePromises = users.map(async user => {
+//             const existingMaintenance = await prisma.maintenance.findFirst({
+//                 where: {
+//                     userId: user.userId,
+//                     month: currentMonth,
+//                     year: currentYear.toString()
+//                 }
+//             });
 
-        await Promise.all(maintenancePromises);
-        logger.info('Maintenance bills created for all users');
-    } catch (error) {
-        logger.error(error);
-    }
-});
+//             if (existingMaintenance) {
+//                 return prisma.maintenance.update({
+//                     where: {
+//                         maintenanceId: existingMaintenance.maintenanceId
+//                     },
+//                     data: {
+//                         amount: existingMaintenance.amount + 100.00 // Update the amount as needed
+//                     }
+//                 });
+//             } else {
+//                 return prisma.maintenance.create({
+//                     data: {
+//                         amount: 100.00,  // Set the initial amount for the maintenance bill
+//                         month: currentMonth,
+//                         year: currentYear.toString(),
+//                         paid: false,
+//                         userId: user.userId
+//                     }
+//                 });
+//             }
+//         });
+
+//         await Promise.all(maintenancePromises);
+//         logger.info('Maintenance bills created/updated for all users');
+//     } catch (error) {
+//         logger.error( error);
+//     }
+// });
