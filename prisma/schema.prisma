@@ -94,30 +94,32 @@ model Maintenance {
 model Plumber {
   plumberId    String    @id @default(uuid())
   name         String
+  password     String
   generalCost  Float
   serviceHours String
-  Rating       Rating[]
+  number       String
   Booking      Booking[]
 }
 
 model Rating {
-  ratingId         String   @id @default(uuid())
-  rating           Int // Rating from 1 to 5
-  comment          String?
-  createdAt        DateTime @default(now())
-  plumber          Plumber  @relation(fields: [plumberPlumberId], references: [plumberId])
-  user             User     @relation(fields: [userUserId], references: [userId])
-  plumberPlumberId String
-  userUserId       String
+  ratingId  String   @id @default(uuid())
+  rating    Int // Rating from 1 to 5
+  comment   String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [userId])
+  booking   Booking  @relation(fields: [bookingId], references: [bookingId])
+  userId    String
+  bookingId String
 }
 
 model Booking {
-  bookingId        String   @id @default(uuid())
-  date             DateTime
-  description      String
-  user             User     @relation(fields: [userUserId], references: [userId])
-  plumber          Plumber  @relation(fields: [plumberPlumberId], references: [plumberId])
-  createdAt        DateTime @default(now())
-  userUserId       String
-  plumberPlumberId String
+  bookingId   String   @id @default(uuid())
+  date        DateTime
+  description String
+  user        User     @relation(fields: [userId], references: [userId])
+  plumber     Plumber  @relation(fields: [plumberId], references: [plumberId])
+  createdAt   DateTime @default(now())
+  userId      String
+  plumberId   String
+  Rating      Rating[]
 }

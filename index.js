@@ -41,6 +41,15 @@ app.use('/api/visitor',visitorRoutes)
 const eventRoutes = require('./modules/events/eventRoute')
 app.use('/api/event',eventRoutes)
 
+const plumberRoutes = require('./modules/plumber/plumberRoute')
+app.use('/api/plumber',plumberRoutes)
+
+const bookingRoutes = require('./modules/booking/bookingRoute')
+app.use('/api/booking',bookingRoutes)
+
+const ratingRoutes = require('./modules/rating/ratingRoute')
+app.use('/api/rating',ratingRoutes)
+
 // cron.schedule('19 20 3 * *', async () => {
 //     try {
 //         const users = await prisma.user.findMany();
