@@ -150,6 +150,16 @@ async function deleteUser(req, res) {
     try {
         const userId = req.params.id;
 
+        await prisma.rating.deleteMany({
+            where:{
+                userId:userId
+            }
+        });
+        await prisma.booking.deleteMany({
+            where:{
+                userId:userId
+            }
+        });
         const deleteVisitors = await prisma.visitor.deleteMany({
             where: {
                 userId: userId

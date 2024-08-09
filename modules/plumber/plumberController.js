@@ -65,6 +65,18 @@ async function login(req, res) {
 
 async function delPlumber (req,res) {
     try {
+        await prisma.rating.deleteMany({
+            where:{
+                booking:{
+                    plumberId:req.params.id
+                }
+            }
+        })
+        await prisma.booking.deleteMany({
+            where:{
+                plumberId:req.params.id
+            }
+        })
         const plumber = await prisma.plumber.delete({
             where:{
                 plumberId:req.params.id

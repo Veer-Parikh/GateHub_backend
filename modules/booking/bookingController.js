@@ -19,6 +19,11 @@ async function createBooking (req,res) {
 
 async function deleteBooking (req,res) {
     try {
+        await prisma.rating.deleteMany({
+            where:{
+                bookingId:req.params.id
+            }
+        })
         await prisma.booking.delete({
             where:{
                 bookingId:req.params.id
