@@ -50,6 +50,9 @@ app.use('/api/booking',bookingRoutes)
 const ratingRoutes = require('./modules/rating/ratingRoute')
 app.use('/api/rating',ratingRoutes)
 
+const maintenanceRoutes = require('./modules/maintenance/maintenanceRoute')
+app.use('/api/maintenance',maintenanceRoutes)
+
 // cron.schedule('19 20 3 * *', async () => {
 //     try {
 //         const users = await prisma.user.findMany();
