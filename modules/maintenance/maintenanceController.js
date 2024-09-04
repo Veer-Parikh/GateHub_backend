@@ -20,7 +20,19 @@ async function sendMaintenance(req,res) {
         })
         await Promise.all(maintenancePromises);
         logger.info('Maintenance bills created/updated for all users');
-        return res.send("maintenance created")
+
+        const notifications = users.map(async user => {
+            return prisma.notification.create({
+                data : {
+                    title: `Maintenance : ${currentMonth},${currentYear}`,
+                    text: "Check out your pending maintenance for this month now!!",
+                    userUserId: user.userId
+                }
+            })
+        })
+        await Promise.all(notifications)
+        logger.info("Notification Sent to all users")
+        return res.send("maintenance and notification created")
     } catch(error){
         res.send(error);
         logger.error(error);

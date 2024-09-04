@@ -7,8 +7,22 @@ async function createMeeting(req,res){
         const meeting = await prisma.meetings.create({
             data : {userId,title,agenda,timing,location}
         });
-        res.send(meeting)
         logger.info("meeting created")
+        const users = await prisma.user.findMany();
+
+        const notifications = users.map(async user => {
+            return prisma.notification.create({
+                data : {
+                    title: `Meeting Scheduled : ${timing}-${location}`,
+                    text: title,
+                    userUserId: user.userId
+                }
+            })
+        })
+        await Promise.all(notifications)
+        logger.info("Notification Sent to all users")
+
+        return res.send(meeting)
     } catch(error){
         res.send(error);
         logger.error(error);

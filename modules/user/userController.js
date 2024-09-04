@@ -119,6 +119,13 @@ async function myProfile(req,res){
         const user = await prisma.user.findFirst({
             where:{
                 userId:req.params.id
+            },
+            include:{
+                Maintenance:{
+                    where:{
+                        paid:false
+                    }
+                }
             }
         });
         logger.info("user profile found successfully");
