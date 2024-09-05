@@ -1,30 +1,42 @@
 const prisma = require('../../utils/prisma');
 const logger = require('../../utils/logger');
 
-async function createMeeting(req,res){
-    try{
-        const { userId,title,agenda,timing,location} = req.body;
+async function createMeeting(req, res) {
+    try {
+        const { userId, title, agenda, timing, location } = req.body;
+        
+        // Create meeting
         const meeting = await prisma.meetings.create({
-            data : {userId,title,agenda,timing,location}
+            data: { userId, title, agenda, timing, location }
         });
-        logger.info("meeting created")
+        logger.info("Meeting created");
+        
+        // Find all users
         const users = await prisma.user.findMany();
 
+        // Convert timing to a more readable format
+        const formattedTiming = new Date(timing).toLocaleString("en-IN", {
+            dateStyle: "long",
+            timeStyle: "short"
+        });
+
+        // Send notifications to all users
         const notifications = users.map(async user => {
             return prisma.notification.create({
-                data : {
-                    title: `Meeting Scheduled : ${timing}-${location}`,
+                data: {
+                    title: `Meeting Scheduled: ${formattedTiming} - ${location}`,
                     text: title,
                     userUserId: user.userId
                 }
-            })
-        })
-        await Promise.all(notifications)
-        logger.info("Notification Sent to all users")
+            });
+        });
 
-        return res.send(meeting)
-    } catch(error){
-        res.send(error);
+        await Promise.all(notifications);
+        logger.info("Notification sent to all users");
+
+        return res.send(meeting);
+    } catch (error) {
+        res.status(500).send(error);
         logger.error(error);
     }
 }
