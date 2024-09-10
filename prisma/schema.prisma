@@ -102,6 +102,16 @@ model Plumber {
   Booking      Booking[]
 }
 
+model Laundry {
+  laundryId    String    @id @default(uuid())
+  name         String
+  password     String
+  generalCost  String?
+  serviceHours String?
+  number       String
+  Booking      Booking[]
+}
+
 model Rating {
   ratingId  String   @id @default(uuid())
   rating    Int // Rating from 1 to 5
@@ -118,11 +128,13 @@ model Booking {
   date        DateTime
   description String
   user        User     @relation(fields: [userId], references: [userId])
-  plumber     Plumber  @relation(fields: [plumberId], references: [plumberId])
+  plumber     Plumber? @relation(fields: [plumberId], references: [plumberId])
+  laundry     Laundry? @relation(fields: [laundryId], references: [laundryId])
   createdAt   DateTime @default(now())
   userId      String
-  plumberId   String
+  plumberId   String?
   Rating      Rating[]
+  laundryId   String?
 }
 
 model Notification {
