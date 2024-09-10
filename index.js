@@ -53,6 +53,9 @@ app.use('/api/rating',ratingRoutes)
 const maintenanceRoutes = require('./modules/maintenance/maintenanceRoute')
 app.use('/api/maintenance',maintenanceRoutes)
 
+const notificationRoutes = require("./modules/notification/notificationRoute")
+app.use("/api/notification",notificationRoutes)
+
 // cron.schedule('19 20 3 * *', async () => {
 //     try {
 //         const users = await prisma.user.findMany();
