@@ -3,10 +3,10 @@ const logger = require("../../utils/logger");
 
 async function createBooking (req,res) {
     try {
-        const { date,description,userId,plumberId } = req.body
+        const { date,description,userId,plumberId,laundryId } = req.body
         const booking = await prisma.booking.create({
             data:{
-                date:date,description:description,userId:userId,plumberId:plumberId
+                date:date,description:description,userId:userId,plumberId:plumberId,laundryId:laundryId
             }
         });
         res.send(booking);
@@ -41,10 +41,15 @@ async function getUserBookings (req,res) {
     try {
         const bookings = await prisma.booking.findMany({
             where:{
-                userId:req.params.id
+                userId:req.params.id,
+                OR:[
+                    {laundryId:req.params.searchWord},
+                    {plumberId:req.params.searchWord}
+                ]
             },
             include:{
                 plumber:true,
+                laundry:true,
                 Rating:true,
                 user:true
             }
@@ -77,6 +82,26 @@ async function getPlumberBookings (req,res) {
     }
 }
 
+async function getLaundryBookings (req,res) {
+    try {
+        const bookings = await prisma.booking.findMany({
+            where:{
+                laundryId:req.params.id
+            },
+            include:{
+                laundry:true,
+                Rating:true,
+                user:true
+            }
+        });
+        logger.info("laundry bookings found");
+        return res.send(bookings)
+    } catch (error) {
+        res.send(error);
+        logger.error(error)
+    }
+}
+
 module.exports = {
-    createBooking,deleteBooking,getPlumberBookings,getUserBookings
+    createBooking,deleteBooking,getPlumberBookings,getUserBookings,getLaundryBookings
 }

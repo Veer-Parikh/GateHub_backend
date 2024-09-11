@@ -63,6 +63,6 @@ async function delSecurity (req,res) {
         res.send(error);
         logger.error(error);
     }
-}
+}//active or not
 
 module.exports = { createSecurity,login,delSecurity }

@@ -99,3 +99,12 @@ app.use("/api/notification",notificationRoutes)
 //         logger.error( error);
 //     }
 // });
+
+
+// const task = () => {
+//     logger.info('This message prints every minute.');
+// };
+
+// // Schedule the task using cron syntax
+// // This example schedules the task to run every minute
+// cron.schedule('*/5 * * * * *', task);
