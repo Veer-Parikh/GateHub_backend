@@ -5,10 +5,26 @@ const logger = require('../../utils/logger');
 
 async function createVisitor(req,res) {
     try{
-        const {name,age,address,purpose,number,photo,userId,securityId} = req.body 
-        
+        const {name,age,address,purpose,number,photo,block,flat} = req.body 
+        const securityId = req.security.securityId;
+        console.log(securityId)
+
+        const room = await prisma.room.findFirst({
+            where:{
+                block: block,
+                room: flat
+            },
+            include:{
+                users:true
+            }
+        })
+        console.log(room)
+        if(!room){
+            return res.status(400).send("Room not found")
+        }
+
         const visitor = await prisma.visitor.create({
-            data : {name,age,address,purpose,number,photo,userId,securityId,status:false}
+            data : {name,age,address,purpose,number,photo,securityId,roomId:room.roomId,userId:room.users[0].userId},
         })
         res.send(visitor)
         logger.info("visitor created successfully")

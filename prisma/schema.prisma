@@ -1,12 +1,11 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// // This is your Prisma schema file,
+// // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
+// // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["fullTextSearch"]
+  previewFeatures = ["fullTextSearchPostgres"]
 }
 
 datasource db {
@@ -15,48 +14,74 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+model Room {
+  roomId    String   @id @default(uuid())
+  block     String
+  room      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users       User[]
+  visitors    Visitor[]
+  bookings    Booking[]
+  Maintenance Maintenance[]
+}
+
 model User {
-  userId        String         @id @default(uuid())
-  email         String         @unique
-  number        String         @unique
+  userId        String    @id @default(uuid())
+  email         String    @unique
+  number        String    @unique
   profileUrl    String?
   otp           String?
   otpExpiration DateTime?
-  createdAt     DateTime       @default(now())
-  name          String         @unique
-  isAdmin       Boolean        @default(false)
-  Meetings      Meetings[]
-  Visitor       Visitor[]
-  Events        Events[]
-  Maintenance   Maintenance[]
-  Rating        Rating[]
-  Booking       Booking[]
-  Notification  Notification[]
+  name          String    @unique
+  password      String?
+  isAdmin       Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  roomId String?
+  room   Room?   @relation(fields: [roomId], references: [roomId])
+
+  Meetings     Meetings[]
+  Visitor      Visitor[]
+  Events       Events[]
+  Rating       Rating[]
+  Booking      Booking[]
+  Notification Notification[]
 }
 
 model Security {
-  securityId String    @id @default(uuid())
+  securityId String   @id @default(uuid())
   name       String
-  number     String    @unique
+  number     String   @unique
   password   String
-  createdAt  DateTime  @default(now())
-  Visitor    Visitor[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  Visitor Visitor[]
 }
 
 model Visitor {
-  visitorId  String    @id @default(uuid())
-  name       String
-  age        Int
-  address    String
-  purpose    String
-  number     Int
-  photo      String?
-  user       User?     @relation(fields: [userId], references: [userId])
-  createdAt  DateTime  @default(now())
-  userId     String?
-  security   Security? @relation(fields: [securityId], references: [securityId])
+  visitorId String   @id @default(uuid())
+  name      String
+  age       Int
+  address   String
+  purpose   String
+  number    Int
+  photo     String?
+  status    Boolean @default(false) // in or out
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [userId])
+
+  roomId String?
+  room   Room?   @relation(fields: [roomId], references: [roomId])
+
   securityId String?
-  status     Boolean //in or out
+  security   Security? @relation(fields: [securityId], references: [securityId])
 }
 
 model Meetings {
@@ -67,8 +92,10 @@ model Meetings {
   location  String
   completed Boolean  @default(false)
   createdAt DateTime @default(now())
-  admin     User     @relation(fields: [userId], references: [userId])
-  userId    String
+  updatedAt DateTime @updatedAt
+
+  userId String
+  admin  User   @relation(fields: [userId], references: [userId])
 }
 
 model Events {
@@ -77,64 +104,88 @@ model Events {
   details   String?
   date      DateTime
   venue     String
-  admin     User     @relation(fields: [userId], references: [userId])
   createdAt DateTime @default(now())
-  userId    String
+  updatedAt DateTime @updatedAt
+
+  userId String
+  admin  User   @relation(fields: [userId], references: [userId])
 }
 
 model Maintenance {
-  maintenanceId String  @id @default(uuid())
+  maintenanceId String   @id @default(uuid())
   amount        Int
-  paid          Boolean @default(false)
+  paid          Boolean  @default(false)
   month         String
   year          String
-  user          User    @relation(fields: [userId], references: [userId])
-  userId        String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [roomId])
 }
 
 model Plumber {
-  plumberId    String    @id @default(uuid())
+  plumberId    String   @id @default(uuid())
   name         String
   password     String
   generalCost  Float
   serviceHours String
   number       String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
   Booking      Booking[]
+  Notification Notification[]
 }
 
 model Laundry {
-  laundryId    String    @id @default(uuid())
+  laundryId    String   @id @default(uuid())
   name         String
   password     String
   generalCost  String?
   serviceHours String?
   number       String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
   Booking      Booking[]
+  Notification Notification[]
 }
 
 model Rating {
   ratingId  String   @id @default(uuid())
-  rating    Int // Rating from 1 to 5
+  rating    Int
   comment   String?
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [userId])
-  booking   Booking  @relation(fields: [bookingId], references: [bookingId])
-  userId    String
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [userId])
+
   bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [bookingId])
 }
 
 model Booking {
   bookingId   String   @id @default(uuid())
   date        DateTime
   description String
-  user        User     @relation(fields: [userId], references: [userId])
-  plumber     Plumber? @relation(fields: [plumberId], references: [plumberId])
-  laundry     Laundry? @relation(fields: [laundryId], references: [laundryId])
   createdAt   DateTime @default(now())
-  userId      String
-  plumberId   String?
-  Rating      Rating[]
-  laundryId   String?
+  updatedAt   DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [userId])
+
+  roomId String?
+  room   Room?   @relation(fields: [roomId], references: [roomId])
+
+  plumberId String?
+  plumber   Plumber? @relation(fields: [plumberId], references: [plumberId])
+
+  laundryId String?
+  laundry   Laundry? @relation(fields: [laundryId], references: [laundryId])
+
+  Rating Rating[]
 }
 
 model Notification {
@@ -143,6 +194,157 @@ model Notification {
   text           String
   visited        Boolean  @default(false)
   createdAt      DateTime @default(now())
-  user           User     @relation(fields: [userUserId], references: [userId])
-  userUserId     String
+  updatedAt      DateTime @updatedAt
+
+  userUserId String?
+  user       User?   @relation(fields: [userUserId], references: [userId])
+
+  plumberId String?
+  plumber   Plumber? @relation(fields: [plumberId], references: [plumberId])
+
+  laundryId String?
+  laundry   Laundry? @relation(fields: [laundryId], references: [laundryId])
 }
+
+// generator client {
+//   provider        = "prisma-client-js"
+//   previewFeatures = ["fullTextSearch"]
+// }
+
+// datasource db {
+//   provider  = "postgresql"
+//   url       = env("DATABASE_URL")
+//   directUrl = env("DIRECT_URL")
+// }
+
+// model User {
+//   userId        String         @id @default(uuid())
+//   email         String         @unique
+//   number        String         @unique
+//   profileUrl    String?
+//   otp           String?
+//   otpExpiration DateTime?
+//   createdAt     DateTime       @default(now())
+//   name          String         @unique
+//   isAdmin       Boolean        @default(false)
+//   Meetings      Meetings[]
+//   Visitor       Visitor[]
+//   Events        Events[]
+//   Maintenance   Maintenance[]
+//   Rating        Rating[]
+//   Booking       Booking[]
+//   Notification  Notification[]
+// }
+
+// model Security {
+//   securityId String    @id @default(uuid())
+//   name       String
+//   number     String    @unique
+//   password   String
+//   createdAt  DateTime  @default(now())
+//   Visitor    Visitor[]
+// }
+
+// model Visitor {
+//   visitorId  String    @id @default(uuid())
+//   name       String
+//   age        Int
+//   address    String
+//   purpose    String
+//   number     Int
+//   photo      String?
+//   user       User?     @relation(fields: [userId], references: [userId])
+//   createdAt  DateTime  @default(now())
+//   userId     String?
+//   security   Security? @relation(fields: [securityId], references: [securityId])
+//   securityId String?
+//   status     Boolean //in or out
+// }
+
+// model Meetings {
+//   meetingId String   @id @default(uuid())
+//   title     String
+//   agenda    String?
+//   timing    DateTime
+//   location  String
+//   completed Boolean  @default(false)
+//   createdAt DateTime @default(now())
+//   admin     User     @relation(fields: [userId], references: [userId])
+//   userId    String
+// }
+
+// model Events {
+//   eventId   String   @id @default(uuid())
+//   title     String
+//   details   String?
+//   date      DateTime
+//   venue     String
+//   admin     User     @relation(fields: [userId], references: [userId])
+//   createdAt DateTime @default(now())
+//   userId    String
+// }
+
+// model Maintenance {
+//   maintenanceId String  @id @default(uuid())
+//   amount        Int
+//   paid          Boolean @default(false)
+//   month         String
+//   year          String
+//   user          User    @relation(fields: [userId], references: [userId])
+//   userId        String
+// }
+
+// model Plumber {
+//   plumberId    String    @id @default(uuid())
+//   name         String
+//   password     String
+//   generalCost  Float
+//   serviceHours String
+//   number       String
+//   Booking      Booking[]
+// }
+
+// model Laundry {
+//   laundryId    String    @id @default(uuid())
+//   name         String
+//   password     String
+//   generalCost  String?
+//   serviceHours String?
+//   number       String
+//   Booking      Booking[]
+// }
+
+// model Rating {
+//   ratingId  String   @id @default(uuid())
+//   rating    Int // Rating from 1 to 5
+//   comment   String?
+//   createdAt DateTime @default(now())
+//   user      User     @relation(fields: [userId], references: [userId])
+//   booking   Booking  @relation(fields: [bookingId], references: [bookingId])
+//   userId    String
+//   bookingId String
+// }
+
+// model Booking {
+//   bookingId   String   @id @default(uuid())
+//   date        DateTime
+//   description String
+//   user        User     @relation(fields: [userId], references: [userId])
+//   plumber     Plumber? @relation(fields: [plumberId], references: [plumberId])
+//   laundry     Laundry? @relation(fields: [laundryId], references: [laundryId])
+//   createdAt   DateTime @default(now())
+//   userId      String
+//   plumberId   String?
+//   Rating      Rating[]
+//   laundryId   String?
+// }
+
+// model Notification {
+//   notificationId String   @id @default(uuid())
+//   title          String
+//   text           String
+//   visited        Boolean  @default(false)
+//   createdAt      DateTime @default(now())
+//   user           User     @relation(fields: [userUserId], references: [userId])
+//   userUserId     String
+// }
