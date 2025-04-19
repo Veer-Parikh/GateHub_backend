@@ -4,7 +4,7 @@ const router = express.Router();
 const prisma = require("../../utils/prisma")
 const { authenticate,authorizeAdmin } = require("../../middleware/authJWT")
 
-router.post("/create",authorizeAdmin,createMeeting);
+router.post("/create",authenticate,createMeeting);
 router.get("/all",getAllMeetings);
 router.get("/byId/:id",getMeetingByMeetingId);
 router.get("/search/:searchWord",getMeetingBySearch);

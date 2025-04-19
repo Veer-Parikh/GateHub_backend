@@ -4,7 +4,7 @@ const router = express.Router();
 const prisma = require("../../utils/prisma")
 const { authenticate,authorizeAdmin } = require("../../middleware/authJWT")
 
-router.post("/create",authorizeAdmin,createEvent);
+router.post("/create",authenticate,createEvent);
 router.get("/all",getEvents);
 router.get("/byId/:id",getEvent);
 router.delete("/delete/:id",deleteEvent);

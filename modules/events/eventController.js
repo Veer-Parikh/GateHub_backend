@@ -3,7 +3,21 @@ const logger = require('../../utils/logger');
 
 async function createEvent(req,res){
     try{
-        const { userId,title,details,date,venue, } = req.body;
+        const userId = req.user.userId;
+        if (!userId) {
+            logger.error("userId not found in request");
+            return res.status(400).send("userId not found in request");
+        }
+        const user = await prisma.user.findUnique({
+            where: {
+                userId: userId
+            }
+        });
+        if(user.isAdmin === false){
+            logger.error("user is not an admin");
+            return res.status(403).send("user is not an admin");
+        }
+        const { title,details,date,venue, } = req.body;
         const event = await prisma.events.create({
             data : {userId,title,details,date,venue}
         });

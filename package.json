@@ -24,6 +24,7 @@
     "otp-generator": "^4.0.1",
     "pino": "^9.3.1",
     "pino-pretty": "^11.2.1",
+    "stripe": "^18.0.0",
     "twilio": "^5.2.2",
     "uuid": "^10.0.0"
   },

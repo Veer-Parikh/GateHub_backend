@@ -1,43 +1,110 @@
 const prisma = require('../../utils/prisma');
 const logger = require('../../utils/logger');
 
-async function createMeeting(req, res) {
+const axios = require('axios');
+const jwt = require('jsonwebtoken');
+
+
+// async function createMeeting(req, res) {
+//     try {
+//         const { userId, title, agenda, timing, location } = req.body;
+        
+//         // Create meeting
+//         const meeting = await prisma.meetings.create({
+//             data: { userId, title, agenda, timing, location }
+//         });
+//         logger.info("Meeting created");
+        
+//         // Find all users
+//         const users = await prisma.user.findMany();
+
+//         // Convert timing to a more readable format
+//         const formattedTiming = new Date(timing).toLocaleString("en-IN", {
+//             dateStyle: "long",
+//             timeStyle: "short"
+//         });
+
+//         // Send notifications to all users
+//         const notifications = users.map(async user => {
+//             return prisma.notification.create({
+//                 data: {
+//                     title: `Meeting Scheduled: ${formattedTiming} - ${location}`,
+//                     text: title,
+//                     userUserId: user.userId
+//                 }
+//             });
+//         });
+
+//         await Promise.all(notifications);
+//         logger.info("Notification sent to all users");
+
+//         return res.send(meeting);
+//     } catch (error) {
+//         res.status(500).send(error);
+//         logger.error(error);
+//     }
+// }
+
+const createMeeting = async (req, res) => {
+  try {
+    const { title, agenda, timing, location, jitsiLink, jitsiId } = req.body
+    const userId = req.user.userId // From auth middleware
+
+    const meeting = await prisma.meetings.create({
+      data: {
+        title,
+        agenda,
+        timing: new Date(timing),
+        location,
+        jitsiLink,
+        jitsiId,
+        userId
+      }
+    })
+
+    res.status(201).json(meeting)
+  } catch (error) {
+    console.error('Error creating meeting:', error)
+    res.status(500).json({ error: 'Failed to create meeting' })
+  }
+}
+
+// const getAllMeetings = async (req, res) => {
+//   try {
+//     const meetings = await prisma.meetings.findMany({
+//       orderBy: {
+//         timing: 'asc'
+//       },
+//       include: {
+//         user: {
+//           select: {
+//             name: true,
+//             email: true
+//           }
+//         }
+//       }
+//     })
+//     res.json(meetings)
+//   } catch (error) {
+//     console.error('Error fetching meetings:', error)
+//     res.status(500).json({ error: 'Failed to fetch meetings' })
+//   }
+// }
+  
+const getAllMeetings = async (req, res) => {
     try {
-        const { userId, title, agenda, timing, location } = req.body;
-        
-        // Create meeting
-        const meeting = await prisma.meetings.create({
-            data: { userId, title, agenda, timing, location }
-        });
-        logger.info("Meeting created");
-        
-        // Find all users
-        const users = await prisma.user.findMany();
-
-        // Convert timing to a more readable format
-        const formattedTiming = new Date(timing).toLocaleString("en-IN", {
-            dateStyle: "long",
-            timeStyle: "short"
-        });
-
-        // Send notifications to all users
-        const notifications = users.map(async user => {
-            return prisma.notification.create({
-                data: {
-                    title: `Meeting Scheduled: ${formattedTiming} - ${location}`,
-                    text: title,
-                    userUserId: user.userId
-                }
-            });
-        });
-
-        await Promise.all(notifications);
-        logger.info("Notification sent to all users");
-
-        return res.send(meeting);
+      const meetings = await prisma.meetings.findMany({
+        orderBy: {
+          timing: 'asc'
+        },
+        include: {
+          admin:true
+        }
+      })
+      res.json(meetings)
     } catch (error) {
-        res.status(500).send(error);
-        logger.error(error);
+      console.error('Error fetching meetings:', error)
+      res.status(500).json({ error: 'Failed to fetch meetings' })
     }
 }
 
@@ -55,16 +122,16 @@ async function getMeetingByMeetingId(req,res) {
     }
 }
 
-async function getAllMeetings(req,res) {
-    try {
-        const meeting = await prisma.meetings.findMany()
-        res.send(meeting);
-        logger.info("meeting found successfully");
-    } catch(error) {
-        res.send(error);
-        logger.error(error);        
-    }
-}
+// async function getAllMeetings(req,res) {
+//     try {
+//         const meeting = await prisma.meetings.findMany()
+//         res.send(meeting);
+//         logger.info("meeting found successfully");
+//     } catch(error) {
+//         res.send(error);
+//         logger.error(error);        
+//     }
+// }
 
 async function getMeetingBySearch(req,res) {
     try{

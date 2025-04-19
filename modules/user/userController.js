@@ -261,7 +261,7 @@ async function createUser(req, res) {
   
       res.json({ message: 'User created successfully', userId: user.userId });
     } catch (error) {
-      logger.error('Error creating user', error);
+      logger.error(error);
       res.status(500).json({ message: 'Internal server error', error });
     }
 }

@@ -38,7 +38,8 @@ async function inside(req,res){
     try {
         const visitor = await prisma.visitor.update({
             data:{
-                status:true
+                status:true,
+                hasLeft:false
             },
             where:{
                 visitorId:req.body.visitorId
@@ -69,23 +70,103 @@ async function delVisitor(req,res){
 
 async function getWaiting(req,res) {
     try {
+        const userId = req.user.userId;
+        
+        const room = await prisma.room.findFirst({
+            where:{
+                users:{
+                    some:{
+                        userId:userId
+                    }
+                }
+            }
+        })
         const visitors = await prisma.visitor.findMany({
             where:{
                 status:false,
-                userId:null
+                roomId:room.roomId,
+                hasLeft:false
+            },
+            include:{
+                security:true
             }
         })
         res.send(visitors)
     } catch(error) {
+        logger.error("Error fetching the visitor");
+        res.send(error);
+    }
+}
 
+async function prevVisitorsInUser(req,res) {
+    try {
+        const userId = req.user.userId;
+        
+        const room = await prisma.room.findFirst({
+            where:{
+                users:{
+                    some:{
+                        userId:userId
+                    }
+                }
+            }
+        })
+        const visitors = await prisma.visitor.findMany({
+            where:{
+                roomId:room.roomId,
+                hasLeft:true,
+            },
+            include:{
+                security:true
+            }
+        })
+        res.send(visitors)
+
+    }catch(error) {
+        logger.error(error);
+        res.send(error);
+    }
+}
+
+async function hasLeft(req,res) {
+    try{
+        const visitor = req.body.visitorId;
+        const visitorr = await prisma.visitor.update({
+            where:{
+                visitorId:visitor
+            },
+            data:{
+                hasLeft:true,
+                status:false
+            }
+        })
+        res.send(visitorr);
+    }catch(error){
+        logger.error("Error fetching the visitor");
+        res.send(error);
     }
 }
 
 async function getInside(req,res) {
     try {
+        const userId = req.user.userId;
+        
+        const room = await prisma.room.findFirst({
+            where:{
+                users:{
+                    some:{
+                        userId:userId
+                    }
+                }
+            }
+        })
         const visitors = await prisma.visitor.findMany({
             where:{
-                status:true
+                status:true,
+                roomId:room.roomId,
+            },
+            include:{
+                security:true
             }
         })
         res.send(visitors)
@@ -109,4 +190,4 @@ async function getNotified(req,res) {
     }
 }
 
-module.exports = { createVisitor,delVisitor,getWaiting,getInside,getNotified,inside }
+module.exports = { createVisitor,delVisitor,getWaiting,getInside,getNotified,inside,prevVisitorsInUser,hasLeft }

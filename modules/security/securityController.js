@@ -45,6 +45,17 @@ async function login(req, res) {
     }
 }
 
+async function getAll(req,res){
+    try{
+        const security = await prisma.security.findMany();
+        res.send(security);
+        logger.info("security fetched successfully")
+    } catch(error){
+        res.error(error);
+        logger.error(error);
+    }
+}
+
 async function delSecurity (req,res) {
     try {
         const deleteVisitors = await prisma.visitor.deleteMany({
@@ -65,4 +76,4 @@ async function delSecurity (req,res) {
     }
 }//active or not
 
-module.exports = { createSecurity,login,delSecurity }
+module.exports = { createSecurity,login,delSecurity,getAll }

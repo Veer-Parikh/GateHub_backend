@@ -41,6 +41,9 @@ app.use('/api/visitor',visitorRoutes)
 const eventRoutes = require('./modules/events/eventRoute')
 app.use('/api/event',eventRoutes)
 
+const laundryRoutes = require('./modules/laundry/laundryRoute')
+app.use('/api/laundry',laundryRoutes)
+
 const plumberRoutes = require('./modules/plumber/plumberRoute')
 app.use('/api/plumber',plumberRoutes)
 
