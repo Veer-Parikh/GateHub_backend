@@ -1,5 +1,6 @@
 const prisma = require('../../utils/prisma');
 const logger = require('../../utils/logger');
+const { sanitize } = require('../../utils/sanitize');
 
 async function createEvent(req,res){
     try{
@@ -13,7 +14,8 @@ async function createEvent(req,res){
                 userId: userId
             }
         });
-        if(user.isAdmin === false){
+        // Re-check against the DB: the token's isAdmin claim may be stale.
+        if(!user || user.isAdmin !== true){
             logger.error("user is not an admin");
             return res.status(403).send("user is not an admin");
         }
@@ -44,29 +46,27 @@ async function createEvent(req,res){
         res.send(event)
 
     } catch(error){
-        res.send(error);
         logger.error(error);
+        res.status(500).json({ message: 'Failed to create event' });
     }
 }
 
 async function deleteEvent(req,res){
     try {
-        const event = await prisma.events.delete({
+        await prisma.events.delete({
             where: {
                 eventId:req.params.id
             }
         });
-        if (!event) {
-            logger.error("event doesn't exist");
-            return res.send("event does not exist");
-        }
-        if (event) {
-            logger.info("event deleted successfully");
-            return res.send("event deleted successfully");
-        }
+        logger.info("event deleted successfully");
+        return res.send("event deleted successfully");
     } catch (err) {
+        if (err.code === 'P2025') {
+            logger.error("event doesn't exist");
+            return res.status(404).json({ message: 'event does not exist' });
+        }
         logger.error(err);
-        res.send(err);
+        res.status(500).json({ message: 'Failed to delete event' });
     }
 }
 
@@ -77,10 +77,10 @@ async function getEvents(req,res) {
                 admin:true
             }
         })
-        res.send(events)
+        res.send(sanitize(events))
     } catch(error){
         logger.error(error);
-        res.send(error);        
+        res.status(500).json({ message: 'Failed to fetch events' });
     }
 }
 
@@ -94,10 +94,13 @@ async function getEvent(req,res) {
                 admin:true
             }
         })
-        res.send(event)
+        if (!event) {
+            return res.status(404).json({ message: 'event does not exist' });
+        }
+        res.send(sanitize(event))
     } catch(error){
         logger.error(error);
-        res.send(error);  
+        res.status(500).json({ message: 'Failed to fetch event' });
     }
 }
 

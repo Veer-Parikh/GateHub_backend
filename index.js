@@ -1,29 +1,32 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
 const dotenv = require('dotenv');
 const cors = require('cors')
-const bodyParser = require('body-parser')
-const prismaa = require('./utils/prisma')
+
+// Load .env before anything that reads process.env at require time.
+dotenv.config();
+
 const logger = require('./utils/logger');
 const cron = require('node-cron');
 
-dotenv.config();
-
-const prisma = new PrismaClient();
 const app = express();
 const port = process.env.PORT || 5000;
 
+// CORS_ORIGIN: comma-separated list of allowed origins, or '*' (default) for any.
+const corsOrigins = (process.env.CORS_ORIGIN || '*')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
 app.use(
     cors({
-        origin:'*'
+        origin: corsOrigins.length === 0 || corsOrigins.includes('*') ? '*' : corsOrigins
     })
 )
 
 app.use(express.json());
-app.use(bodyParser.json());
 
-app.listen(port, () => {
-    logger.info(`Server is running on port ${port}`);
+app.get('/api/health', (req, res) => {
+    res.json({ ok: true, uptime: process.uptime() });
 });
 
 const userRoutes = require('./modules/user/userRoutes')
@@ -59,6 +62,35 @@ app.use('/api/maintenance',maintenanceRoutes)
 const notificationRoutes = require("./modules/notification/notificationRoute")
 app.use("/api/notification",notificationRoutes)
 
+// JSON 404 for unknown API routes.
+app.use('/api', (req, res) => {
+    res.status(404).json({ message: `Route not found: ${req.method} ${req.originalUrl}` });
+});
+
+// Final error handler (malformed JSON bodies, multer errors, anything passed to next(err)).
+app.use((err, req, res, next) => {
+    if (res.headersSent) {
+        return next(err);
+    }
+    let status = 500;
+    if (err.status >= 400 && err.status < 500) {
+        status = err.status; // e.g. body-parser "entity.parse.failed" -> 400
+    } else if (err.name === 'MulterError') {
+        status = 400;
+    }
+    if (status >= 500) {
+        logger.error(err);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+    logger.warn(`${req.method} ${req.originalUrl} -> ${status}: ${err.message}`);
+    return res.status(status).json({ message: err.expose || err.name === 'MulterError' ? err.message : 'Bad request' });
+});
+
+app.listen(port, () => {
+    logger.info(`Server is running on port ${port}`);
+});
+
+// NOTE: the cron job below needs a Prisma client if re-enabled: const prisma = require('./utils/prisma')
 // cron.schedule('19 20 3 * *', async () => {
 //     try {
 //         const users = await prisma.user.findMany();

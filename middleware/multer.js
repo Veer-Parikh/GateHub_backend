@@ -1,10 +1,15 @@
 const multer = require('multer');
 const {v4 : uuidv4} = require('uuid')
 const path = require('path')
+const fs = require('fs')
+
+// Resolve relative to this file (not the process CWD) and make sure it exists.
+const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const storage = multer.diskStorage({
     destination: function(req,file,cb){
-        cb(null,"../uploads")
+        cb(null,UPLOAD_DIR)
     },
     filename: function(req,file,cb){
         cb(null,`${uuidv4()}_${path.extname(file.originalname)}`);
@@ -21,7 +26,7 @@ const filter = (req,file,cb) =>{
     }
 }
 
-const uploadMiddleware = multer({ 
+const uploadMiddleware = multer({
     storage,
     fileFilter: filter,
   });

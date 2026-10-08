@@ -1,10 +1,11 @@
-const {deleteNotif,getUserNotif,update} = require("./notificationController")
+const {deleteNotif,getUserNotif,update,getMyNotifs} = require("./notificationController")
 const express = require('express');
 const router = express.Router();
-const prisma = require("../../utils/prisma")
+const { authenticate } = require("../../middleware/authJWT")
 
-router.delete("/delete/notificationId",deleteNotif)
-router.get("/myNotif/id",getUserNotif)
-router.patch("/visit/notificationId",update)
+router.get("/my",authenticate,getMyNotifs)
+router.delete("/delete/:notificationId",authenticate,deleteNotif)
+router.get("/myNotif/:id",authenticate,getUserNotif)
+router.patch("/visit/:notificationId",authenticate,update)
 
 module.exports = router

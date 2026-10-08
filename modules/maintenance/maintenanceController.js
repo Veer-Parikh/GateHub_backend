@@ -1,5 +1,6 @@
 const prisma = require('../../utils/prisma');
 const logger = require('../../utils/logger');
+const { sanitize } = require('../../utils/sanitize');
 
 // async function sendMaintenance(req,res) {
 //     try {
@@ -51,9 +52,17 @@ async function sendMaintenance(req, res) {
             return res.status(400).json({ error: "amount, month, and year are required in the request body" });
         }
 
+        // Maintenance.amount is an Int and month/year are Strings in the schema.
+        const amountInt = Number(amount);
+        if (!Number.isInteger(amountInt) || amountInt <= 0) {
+            return res.status(400).json({ error: "amount must be a positive whole number" });
+        }
+        const monthStr = String(month);
+        const yearStr = String(year);
+
         const rooms = await prisma.room.findMany({
             include: {
-                users: true
+                users: { select: { userId: true } }
             }
         });
 
@@ -61,17 +70,17 @@ async function sendMaintenance(req, res) {
             const existing = await prisma.maintenance.findFirst({
                 where: {
                     roomId: room.roomId,
-                    month: month,
-                    year: year
+                    month: monthStr,
+                    year: yearStr
                 }
             });
 
             if (!existing) {
                 await prisma.maintenance.create({
                     data: {
-                        amount,
-                        month,
-                        year,
+                        amount: amountInt,
+                        month: monthStr,
+                        year: yearStr,
                         paid: false,
                         roomId: room.roomId
                     }
@@ -81,7 +90,7 @@ async function sendMaintenance(req, res) {
                 if (room.users.length > 0) {
                     await prisma.notification.create({
                         data: {
-                            title: `Maintenance : ${month}, ${year}`,
+                            title: `Maintenance : ${monthStr}, ${yearStr}`,
                             text: "Check out your pending maintenance for this month now!!",
                             userUserId: room.users[0].userId
                         }
@@ -104,15 +113,43 @@ async function sendMaintenance(req, res) {
 
     } catch (error) {
         logger.error(error);
-        return res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: "Failed to send maintenance bills" });
     }
 }
 
+// Marks a bill paid. Allowed for admins, or for a resident of the bill's room
+// (residents call this after a successful Razorpay payment).
 async function paid (req,res) {
     try{
+        const maintenanceId = req.body?.maintenanceId;
+        if (!maintenanceId || typeof maintenanceId !== 'string') {
+            return res.status(400).json({ message: 'maintenanceId is required' });
+        }
+
+        const bill = await prisma.maintenance.findUnique({
+            where:{ maintenanceId },
+            include:{
+                room:{
+                    include:{
+                        users:{ select:{ userId:true } }
+                    }
+                }
+            }
+        })
+        if (!bill) {
+            return res.status(404).json({ message: 'Maintenance bill not found' });
+        }
+
+        const isAdmin = req.user.isAdmin === true;
+        const isRoomMember = Boolean(req.user.userId) &&
+            (bill.room?.users || []).some((u) => u.userId === req.user.userId);
+        if (!isAdmin && !isRoomMember) {
+            return res.status(403).json({ message: 'You can only pay maintenance for your own flat' });
+        }
+
         const maintenance = await prisma.maintenance.update({
             where:{
-                maintenanceId:req.body.maintenanceId
+                maintenanceId:maintenanceId
             },
             data:{
                 paid:true
@@ -121,8 +158,8 @@ async function paid (req,res) {
         res.send(maintenance)
         logger.info("maintenance updated to paid")
     } catch(error) {
-        res.send(error);
         logger.error(error);
+        res.status(500).json({ message: 'Failed to update maintenance' });
     }
 }
 
@@ -141,77 +178,64 @@ async function getAllUnpaid (req,res) {
             }
         })
         logger.info("all unpaid found")
-        res.send(unpaid)
+        res.send(sanitize(unpaid))
     }catch(error){
-        res.send(error);
         logger.error(error);
+        res.status(500).json({ message: 'Failed to fetch unpaid maintenance' });
+    }
+}
+
+// Room of the resident behind the token. Guarding on userId matters: an undefined id in a
+// Prisma `where` means "no filter" and would match some other flat.
+async function findUserRoom(userId) {
+    if (!userId) return null;
+    return prisma.room.findFirst({
+        where:{
+            users:{
+                some:{
+                    userId:userId
+                }
+            }
+        }
+    })
+}
+
+async function getUserBills (req, res, paidStatus) {
+    try{
+        if (!req.user.userId) {
+            return res.status(403).json({ message: 'Not a resident account' });
+        }
+        const room = await findUserRoom(req.user.userId);
+        if (!room) {
+            return res.send([]);
+        }
+        const bills = await prisma.maintenance.findMany({
+            where:{
+                paid:paidStatus,
+                roomId:room.roomId
+            },
+            include:{
+                room:{
+                    include:{
+                        users:true
+                    }
+                }
+            }
+        })
+        res.send(sanitize(bills))
+        logger.info(`all user ${paidStatus ? 'paid' : 'unpaid'} found`)
+    }catch(error){
+        logger.error(error);
+        res.status(500).json({ message: 'Failed to fetch maintenance' });
     }
 }
 
 async function getUserUnpaid (req,res) {
-    try{
-        const userId = req.user.userId;
-        const room = await prisma.room.findFirst({
-            where:{
-                users:{
-                    some:{
-                        userId:userId
-                    }
-                }
-            }
-        })
-        const unpaid = await prisma.maintenance.findMany({
-            where:{
-                paid:false,
-                roomId:room.roomId
-            },
-            include:{
-                room:{
-                    include:{
-                        users:true
-                    }
-                }
-            }
-        })
-        res.send(unpaid)
-        logger.info("all user unpaid found")
-    }catch(error){
-        res.send(error);
-        logger.error(error);
-    }
+    return getUserBills(req, res, false);
 }
 
 async function getUserPaid (req,res) {
-    try{
-        const userId = req.user.userId;
-        const room = await prisma.room.findFirst({
-            where:{
-                users:{
-                    some:{
-                        userId:userId
-                    }
-                }
-            }
-        })
-        const unpaid = await prisma.maintenance.findMany({
-            where:{
-                paid:true,
-                roomId:room.roomId
-            },
-            include:{
-                room:{
-                    include:{
-                        users:true
-                    }
-                }
-            }
-        })
-        res.send(unpaid)
-        logger.info("all user unpaid found")
-    }catch(error){
-        res.send(error);
-        logger.error(error);
-    }
+    return getUserBills(req, res, true);
 }
 
 module.exports = {sendMaintenance,getAllUnpaid,getUserUnpaid,getUserPaid,paid}
