@@ -248,9 +248,18 @@ async function getNotified(req,res) {
             where:{
                 status:false,
                 securityId:null
-            }
+            },
+            select: {
+                visitorId: true,
+                name: true,
+                age: true,
+                purpose: true,
+                number: true,
+                createdAt: true,
+                room: { select: { block: true, room: true } },
+            },
         })
-        res.send(visitors)
+        res.send(sanitize(visitors))
     } catch(error) {
         // Previously an empty catch, which left the request hanging forever.
         logger.error(error);

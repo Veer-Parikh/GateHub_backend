@@ -1,29 +1,69 @@
 const express = require('express');
 const dotenv = require('dotenv');
-const cors = require('cors')
+const cors = require('cors');
+const helmet = require('helmet');
+const { rateLimit } = require('express-rate-limit');
 
 // Load .env before anything that reads process.env at require time.
 dotenv.config();
 
 const logger = require('./utils/logger');
-const cron = require('node-cron');
 
 const app = express();
 const port = process.env.PORT || 5000;
+const isProduction = process.env.NODE_ENV === 'production';
 
-// CORS_ORIGIN: comma-separated list of allowed origins, or '*' (default) for any.
-const corsOrigins = (process.env.CORS_ORIGIN || '*')
+app.disable('x-powered-by');
+app.set('trust proxy', process.env.TRUST_PROXY === 'true' ? 1 : false);
+
+// CORS_ORIGIN is required in production and may contain comma-separated origins.
+const configuredOrigins = (process.env.CORS_ORIGIN || '')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
 
+if (isProduction && (process.env.DEMO_MODE === 'true' || !process.env.JWT_SECRET || configuredOrigins.length === 0)) {
+    throw new Error('Production requires DEMO_MODE=false, JWT_SECRET, and CORS_ORIGIN.');
+}
+
+const corsOrigins = configuredOrigins.length > 0 ? configuredOrigins : ['http://localhost:3000'];
+
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 app.use(
     cors({
-        origin: corsOrigins.length === 0 || corsOrigins.includes('*') ? '*' : corsOrigins
+        origin(origin, callback) {
+            if (!origin || corsOrigins.includes(origin)) return callback(null, true);
+            return callback(new Error('Origin is not allowed by CORS'));
+        },
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
+        maxAge: 600,
     })
-)
+);
 
-app.use(express.json());
+app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || '100kb' }));
+app.use(express.urlencoded({ extended: false, limit: process.env.FORM_BODY_LIMIT || '100kb' }));
+
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: Number(process.env.API_RATE_LIMIT || 300),
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: { message: 'Too many requests. Please try again later.' },
+});
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: Number(process.env.AUTH_RATE_LIMIT || 20),
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    skipSuccessfulRequests: true,
+    message: { message: 'Too many sign-in attempts. Please try again later.' },
+});
+
+app.use('/api', apiLimiter);
+app.use(['/api/user/login', '/api/user/signup', '/api/security/login', '/api/security/signup', '/api/plumber/login', '/api/plumber/signup', '/api/laundry/login', '/api/laundry/signup'], authLimiter);
 
 app.get('/api/health', (req, res) => {
     res.json({ ok: true, uptime: process.uptime() });
@@ -82,7 +122,7 @@ app.use((err, req, res, next) => {
         logger.error(err);
         return res.status(500).json({ message: 'Internal server error' });
     }
-    logger.warn(`${req.method} ${req.originalUrl} -> ${status}: ${err.message}`);
+    logger.warn({ err: err.message, method: req.method, path: req.originalUrl, status }, 'Request failed');
     return res.status(status).json({ message: err.expose || err.name === 'MulterError' ? err.message : 'Bad request' });
 });
 

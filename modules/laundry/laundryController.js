@@ -37,15 +37,7 @@ async function createLaundry (req,res) {
 async function getLaundrys (req,res) {
     try {
         const laundrys = await prisma.laundry.findMany({
-            include:{
-                Booking:{
-                    include:{
-                        laundry:true,
-                        Rating:true,
-                        user:true
-                    }
-                }
-            }
+            select: { laundryId: true, name: true, number: true, generalCost: true, serviceHours: true }
         })
         res.send(sanitize(laundrys));
         logger.info("laundries found");

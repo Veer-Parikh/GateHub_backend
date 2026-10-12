@@ -37,15 +37,7 @@ async function createPlumber (req,res) {
 async function getPlumbers (req,res) {
     try {
         const plumbers = await prisma.plumber.findMany({
-            include:{
-                Booking:{
-                    include:{
-                        plumber:true,
-                        Rating:true,
-                        user:true
-                    }
-                }
-            }
+            select: { plumberId: true, name: true, number: true, generalCost: true, serviceHours: true }
         })
         res.send(sanitize(plumbers));
         logger.info("plumbers found");

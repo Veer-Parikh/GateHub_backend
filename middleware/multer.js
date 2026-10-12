@@ -22,13 +22,18 @@ const filter = (req,file,cb) =>{
     if(allowedTypes.includes(file.mimetype)){
         cb(null,true)
     } else {
-        cb(null,false)
+        cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE'))
     }
 }
 
 const uploadMiddleware = multer({
     storage,
     fileFilter: filter,
+    limits: {
+      fileSize: Number(process.env.MAX_UPLOAD_BYTES || 5 * 1024 * 1024),
+      files: 1,
+      fields: 20,
+    },
   });
 
 
